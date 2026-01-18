@@ -1,39 +1,115 @@
-# Ecommerce Store Backend API
+# Ecommerce Store - Full Stack Application
 
-A Node.js/Express/TypeScript backend implementation for an ecommerce store with cart management, checkout functionality, and discount code system.
+A complete ecommerce store implementation with Node.js/Express/TypeScript backend and React/TypeScript frontend, featuring cart management, checkout functionality, and discount code system.
 
 ## Features
 
+### Backend
 - **TypeScript**: Fully typed backend with TypeScript for better code quality and maintainability
 - **Client APIs**: Add items to cart, apply discount codes, and checkout
 - **Admin APIs**: Generate discount codes and view store statistics
 - **Discount System**: Every nth order (default: 5) automatically generates a 10% discount code
 - **In-Memory Store**: No database required - perfect for development and testing
+- **Unit Tests**: Comprehensive Jest test suite
+
+### Frontend
+- **React + TypeScript**: Modern, type-safe frontend with Vite
+- **Product Catalog**: Browse products and add to cart with quantity controls
+- **Shopping Cart**: View cart items, adjust quantities, and apply discount codes
+- **Checkout**: Complete order placement with confirmation
+- **Admin Dashboard**: View statistics and generate discount codes
+- **Unit Tests**: Comprehensive Vitest test suite with React Testing Library
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - npm or yarn
 
-## Installation
+## Quick Start
 
-1. Install dependencies:
+### 1. Backend Setup
+
+Navigate to the project root directory:
+
+```bash
+cd "/Users/ketkeesabde/Documents/Amaclone assgn"
+```
+
+Install backend dependencies:
 ```bash
 npm install
 ```
 
-2. Build TypeScript (production):
+Start the backend server (development mode):
+```bash
+npm run dev
+```
+
+The backend server will start on `http://localhost:3000` by default.
+
+For production build:
 ```bash
 npm run build
 npm start
 ```
 
-For development with auto-reload (TypeScript compilation):
+### 2. Frontend Setup
+
+Open a new terminal and navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Install frontend dependencies:
+```bash
+npm install
+```
+
+Start the frontend development server:
 ```bash
 npm run dev
 ```
 
-The server will start on `http://localhost:3000` by default.
+The frontend will start on `http://localhost:5173` by default.
+
+### 3. Access the Application
+
+- **Frontend**: Open `http://localhost:5173` in your browser
+- **Backend API**: Available at `http://localhost:3000/api`
+- **API Documentation**: Visit `http://localhost:3000` for API endpoint information
+
+## Project Structure
+
+```
+├── src/                          # Backend source code
+│   ├── server.ts                 # Main server entry point
+│   ├── types/
+│   │   └── index.ts             # TypeScript type definitions
+│   ├── data/
+│   │   └── store.ts             # In-memory data store and business logic
+│   ├── controllers/
+│   │   ├── clientController.ts  # Client API controllers
+│   │   └── adminController.ts   # Admin API controllers
+│   └── routes/
+│       ├── clientRoutes.ts      # Client API routes
+│       └── adminRoutes.ts       # Admin API routes
+├── frontend/                     # Frontend React application
+│   ├── src/
+│   │   ├── components/          # Reusable components (Header)
+│   │   ├── pages/               # Page components (Shop, Cart, Checkout, Admin)
+│   │   ├── services/            # API service layer
+│   │   ├── types/               # TypeScript type definitions
+│   │   ├── data/                # Static data (products)
+│   │   ├── App.tsx              # Main app component
+│   │   └── main.tsx             # Entry point
+│   ├── package.json
+│   └── vite.config.ts           # Vite configuration
+├── dist/                         # Compiled JavaScript (generated after build)
+├── package.json                  # Backend dependencies and scripts
+├── tsconfig.json                 # TypeScript configuration
+└── README.md                     # This file
+```
 
 ## API Documentation
 
@@ -288,26 +364,6 @@ curl http://localhost:3000/api/admin/statistics
 
 ---
 
-## Project Structure
-
-```
-├── src/
-│   ├── server.ts            # Main server entry point
-│   ├── types/
-│   │   └── index.ts         # TypeScript type definitions
-│   ├── data/
-│   │   └── store.ts         # In-memory data store and business logic
-│   ├── controllers/
-│   │   ├── clientController.ts  # Client API controllers
-│   │   └── adminController.ts   # Admin API controllers
-│   └── routes/
-│       ├── clientRoutes.ts  # Client API routes
-│       └── adminRoutes.ts   # Admin API routes
-├── dist/                    # Compiled JavaScript (generated after build)
-├── package.json             # Dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
-└── README.md                # This file
-```
 
 ---
 
@@ -331,9 +387,43 @@ PORT=4000 npm start
 
 ## Testing
 
-Run tests (when implemented):
+### Backend Tests
+
+Run backend unit tests:
 ```bash
 npm test
+```
+
+Run with coverage:
+```bash
+npm test -- --coverage
+```
+
+### Frontend Tests
+
+Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+Run frontend tests:
+```bash
+npm test
+```
+
+Run with coverage:
+```bash
+npm run test:coverage
+```
+
+Run tests in watch mode:
+```bash
+npm test -- --watch
+```
+
+Run tests with UI:
+```bash
+npm run test:ui
 ```
 
 ---
@@ -378,11 +468,45 @@ POST /api/admin/generate-discount-code
 
 ---
 
+## Frontend Features
+
+### Shop Page (`/`)
+- Browse product catalog
+- Add products to cart
+- Adjust quantities directly from the shop page using +/- buttons
+- View items already in cart with quantity indicators
+
+### Cart Page (`/cart`)
+- View all cart items with quantities
+- Adjust item quantities using +/- buttons
+- Apply discount codes
+- View subtotal, discount, and total
+- Proceed to checkout
+
+### Checkout Page (`/checkout`)
+- Review order summary
+- Place order
+- View order confirmation with order details
+
+### Admin Page (`/admin`)
+- View store statistics (total orders, items purchased, revenue, discounts)
+- Generate discount codes (when nth order condition is met)
+- View all discount codes and their usage status
+
+## Development Workflow
+
+1. **Start Backend**: Run `npm run dev` in the project root
+2. **Start Frontend**: Run `npm run dev` in the `frontend` directory
+3. **Access Application**: Open `http://localhost:5173` in your browser
+4. **Test APIs**: Use the frontend UI or test with curl/Postman using the API documentation
+
 ## Notes
 
 - All data is stored in-memory and will be lost when the server restarts
 - This implementation is designed for development and testing purposes
 - For production, consider implementing a persistent database
+- Frontend uses a hardcoded `userId` of `'user1'` - in production, implement authentication
+- Product data is static in `frontend/src/data/products.ts` - in production, fetch from API
 
 ---
 

@@ -7,25 +7,30 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import Admin from '../Admin';
-import * as api from '../../services/api';
 
 // Mock the API
-vi.mock('../../services/api');
-const mockedApi = api as any;
+vi.mock('../../services/api', () => ({
+  adminApi: {
+    getStatistics: vi.fn(),
+    generateDiscountCode: vi.fn(),
+  },
+}));
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(<BrowserRouter>{component}</BrowserRouter>);
 };
 
 describe('Admin', () => {
-  beforeEach(() => {
+  let adminApi: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const apiModule = await import('../../services/api');
+    adminApi = apiModule.adminApi;
   });
 
   it('should display loading state initially', () => {
-    mockedApi.adminApi = {
-      getStatistics: vi.fn(() => new Promise(() => {})), // Never resolves
-    };
+    adminApi.getStatistics.mockImplementation(() => new Promise(() => {})); // Never resolves
 
     renderWithRouter(<Admin />);
     expect(screen.getByText('Loading statistics...')).toBeInTheDocument();
@@ -43,9 +48,7 @@ describe('Admin', () => {
       totalOrders: 10,
     };
 
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(mockStats),
-    };
+    adminApi.getStatistics.mockResolvedValue(mockStats);
 
     renderWithRouter(<Admin />);
     
@@ -69,9 +72,7 @@ describe('Admin', () => {
       totalOrders: 5,
     };
 
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(mockStats),
-    };
+    adminApi.getStatistics.mockResolvedValue(mockStats);
 
     renderWithRouter(<Admin />);
     
@@ -93,10 +94,8 @@ describe('Admin', () => {
       totalOrders: 5,
     };
 
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(mockStats),
-      generateDiscountCode: vi.fn().mockResolvedValue('DISCOUNT789'),
-    };
+    adminApi.getStatistics.mockResolvedValue(mockStats);
+    adminApi.generateDiscountCode.mockResolvedValue('DISCOUNT789');
 
     const user = userEvent.setup();
     renderWithRouter(<Admin />);
@@ -109,7 +108,7 @@ describe('Admin', () => {
     await user.click(generateButton);
 
     await waitFor(() => {
-      expect(mockedApi.adminApi.generateDiscountCode).toHaveBeenCalled();
+      expect(adminApi.generateDiscountCode).toHaveBeenCalled();
     });
   });
 
@@ -122,10 +121,8 @@ describe('Admin', () => {
       totalOrders: 5,
     };
 
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(mockStats),
-      generateDiscountCode: vi.fn().mockResolvedValue('DISCOUNT789'),
-    };
+    adminApi.getStatistics.mockResolvedValue(mockStats);
+    adminApi.generateDiscountCode.mockResolvedValue('DISCOUNT789');
 
     const user = userEvent.setup();
     renderWithRouter(<Admin />);
@@ -151,10 +148,8 @@ describe('Admin', () => {
       totalOrders: 3, // Not a multiple of 5
     };
 
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(mockStats),
-      generateDiscountCode: vi.fn().mockRejectedValue(new Error('Condition not met')),
-    };
+    adminApi.getStatistics.mockResolvedValue(mockStats);
+    adminApi.generateDiscountCode.mockRejectedValue(new Error('Condition not met'));
 
     const user = userEvent.setup();
     renderWithRouter(<Admin />);
@@ -172,9 +167,7 @@ describe('Admin', () => {
   });
 
   it('should display empty state when no statistics available', async () => {
-    mockedApi.adminApi = {
-      getStatistics: vi.fn().mockResolvedValue(null),
-    };
+    adminApi.getStatistics.mockResolvedValue(null);
 
     renderWithRouter(<Admin />);
     

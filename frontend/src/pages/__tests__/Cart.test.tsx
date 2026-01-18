@@ -7,11 +7,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import Cart from '../Cart';
-import * as api from '../../services/api';
 
 // Mock the API
-vi.mock('../../services/api');
-const mockedApi = api as any;
+vi.mock('../../services/api', () => ({
+  clientApi: {
+    getCart: vi.fn(),
+    updateCartQuantity: vi.fn(),
+    applyDiscount: vi.fn(),
+  },
+}));
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -28,19 +32,22 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe('Cart', () => {
-  beforeEach(() => {
+  let clientApi: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
+    
+    const apiModule = await import('../../services/api');
+    clientApi = apiModule.clientApi;
   });
 
   it('should display empty state when cart is empty', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     renderWithRouter(<Cart />);
     
@@ -50,24 +57,14 @@ describe('Cart', () => {
   });
 
   it('should display cart items when cart has items', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [
-          { id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 },
-          { id: '2', name: 'Wireless Mouse', price: 29.99, quantity: 2 },
-        ],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-      updateCartQuantity: vi.fn().mockResolvedValue({
-        items: [
-          { id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 2 },
-          { id: '2', name: 'Wireless Mouse', price: 29.99, quantity: 2 },
-        ],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [
+        { id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 },
+        { id: '2', name: 'Wireless Mouse', price: 29.99, quantity: 2 },
+      ],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     renderWithRouter(<Cart />);
     
@@ -78,16 +75,14 @@ describe('Cart', () => {
   });
 
   it('should display correct subtotal and total', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [
-          { id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 },
-          { id: '2', name: 'Wireless Mouse', price: 29.99, quantity: 2 },
-        ],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [
+        { id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 },
+        { id: '2', name: 'Wireless Mouse', price: 29.99, quantity: 2 },
+      ],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     renderWithRouter(<Cart />);
     
@@ -98,13 +93,11 @@ describe('Cart', () => {
   });
 
   it('should display discount section', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     renderWithRouter(<Cart />);
     
@@ -114,13 +107,11 @@ describe('Cart', () => {
   });
 
   it('should show applied discount code when one is active', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
-        discountCode: 'DISCOUNT123',
-        appliedDiscount: 10,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
+      discountCode: 'DISCOUNT123',
+      appliedDiscount: 10,
+    });
 
     renderWithRouter(<Cart />);
     
@@ -131,18 +122,17 @@ describe('Cart', () => {
   });
 
   it('should update quantity when +/- buttons are clicked', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 }],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-      updateCartQuantity: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 2 }],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 1 }],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
+
+    clientApi.updateCartQuantity.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 1299.99, quantity: 2 }],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     const user = userEvent.setup();
     renderWithRouter(<Cart />);
@@ -155,23 +145,22 @@ describe('Cart', () => {
     await user.click(plusButton);
 
     await waitFor(() => {
-      expect(mockedApi.clientApi.updateCartQuantity).toHaveBeenCalled();
+      expect(clientApi.updateCartQuantity).toHaveBeenCalled();
     });
   });
 
   it('should apply discount code when entered', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-      applyDiscount: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
-        discountCode: 'DISCOUNT123',
-        appliedDiscount: 10,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
+
+    clientApi.applyDiscount.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
+      discountCode: 'DISCOUNT123',
+      appliedDiscount: 10,
+    });
 
     const user = userEvent.setup();
     renderWithRouter(<Cart />);
@@ -187,18 +176,16 @@ describe('Cart', () => {
     await user.click(applyButton);
 
     await waitFor(() => {
-      expect(mockedApi.clientApi.applyDiscount).toHaveBeenCalledWith('user1', 'DISCOUNT123');
+      expect(clientApi.applyDiscount).toHaveBeenCalledWith('user1', 'DISCOUNT123');
     });
   });
 
   it('should navigate to checkout when checkout button is clicked', async () => {
-    mockedApi.clientApi = {
-      getCart: vi.fn().mockResolvedValue({
-        items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
-        discountCode: null,
-        appliedDiscount: 0,
-      }),
-    };
+    clientApi.getCart.mockResolvedValue({
+      items: [{ id: '1', name: 'Laptop Pro', price: 100, quantity: 1 }],
+      discountCode: null,
+      appliedDiscount: 0,
+    });
 
     const user = userEvent.setup();
     renderWithRouter(<Cart />);

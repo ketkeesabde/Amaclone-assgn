@@ -3,16 +3,30 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
 import { CartItem, Cart, Order, Statistics } from '../../types';
 
 // Mock axios
-vi.mock('axios');
-const mockedAxios = axios as any;
+vi.mock('axios', () => {
+  const mockAxiosInstance = {
+    get: vi.fn(),
+    post: vi.fn(),
+  };
+
+  return {
+    default: {
+      create: vi.fn(() => mockAxiosInstance),
+    },
+  };
+});
 
 describe('Client API', () => {
-  beforeEach(() => {
+  let mockAxiosInstance: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // Get the mocked axios instance
+    const axiosModule = await import('axios');
+    mockAxiosInstance = (axiosModule.default as any).create();
   });
 
   describe('getCart', () => {
@@ -23,15 +37,13 @@ describe('Client API', () => {
         appliedDiscount: 0,
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        get: vi.fn().mockResolvedValue({ data: mockCart }),
-      }));
+      mockAxiosInstance.get.mockResolvedValue({ data: mockCart });
 
-      // Re-import to get fresh axios instance
-      const { clientApi: api } = await import('../api');
-      const cart = await api.getCart('user1');
+      const { clientApi } = await import('../api');
+      const cart = await clientApi.getCart('user1');
 
       expect(cart).toEqual(mockCart);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/client/cart?userId=user1');
     });
   });
 
@@ -50,16 +62,18 @@ describe('Client API', () => {
         appliedDiscount: 0,
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        post: vi.fn().mockResolvedValue({
-          data: { success: true, cart: mockCart },
-        }),
-      }));
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, cart: mockCart },
+      });
 
-      const { clientApi: api } = await import('../api');
-      const cart = await api.addToCart('user1', mockItem);
+      const { clientApi } = await import('../api');
+      const cart = await clientApi.addToCart('user1', mockItem);
 
       expect(cart.items).toContainEqual(mockItem);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/client/cart/add', {
+        userId: 'user1',
+        item: mockItem,
+      });
     });
   });
 
@@ -71,16 +85,19 @@ describe('Client API', () => {
         appliedDiscount: 0,
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        post: vi.fn().mockResolvedValue({
-          data: { success: true, cart: mockCart },
-        }),
-      }));
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, cart: mockCart },
+      });
 
-      const { clientApi: api } = await import('../api');
-      const cart = await api.updateCartQuantity('user1', '1', 1);
+      const { clientApi } = await import('../api');
+      const cart = await clientApi.updateCartQuantity('user1', '1', 1);
 
       expect(cart.items[0].quantity).toBe(2);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/client/cart/update-quantity', {
+        userId: 'user1',
+        itemId: '1',
+        quantityChange: 1,
+      });
     });
   });
 
@@ -92,17 +109,19 @@ describe('Client API', () => {
         appliedDiscount: 10,
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        post: vi.fn().mockResolvedValue({
-          data: { success: true, cart: mockCart },
-        }),
-      }));
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, cart: mockCart },
+      });
 
-      const { clientApi: api } = await import('../api');
-      const cart = await api.applyDiscount('user1', 'DISCOUNT123');
+      const { clientApi } = await import('../api');
+      const cart = await clientApi.applyDiscount('user1', 'DISCOUNT123');
 
       expect(cart.discountCode).toBe('DISCOUNT123');
       expect(cart.appliedDiscount).toBe(10);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/client/cart/apply-discount', {
+        userId: 'user1',
+        discountCode: 'DISCOUNT123',
+      });
     });
   });
 
@@ -119,40 +138,44 @@ describe('Client API', () => {
         createdAt: new Date().toISOString(),
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        post: vi.fn().mockResolvedValue({
-          data: { success: true, order: mockOrder },
-        }),
-      }));
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, order: mockOrder },
+      });
 
-      const { clientApi: api } = await import('../api');
-      const order = await api.checkout('user1');
+      const { clientApi } = await import('../api');
+      const order = await clientApi.checkout('user1');
 
       expect(order.id).toBe(1);
       expect(order.total).toBe(100);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/client/checkout', {
+        userId: 'user1',
+      });
     });
   });
 });
 
 describe('Admin API', () => {
-  beforeEach(() => {
+  let mockAxiosInstance: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const axiosModule = await import('axios');
+    mockAxiosInstance = (axiosModule.default as any).create();
   });
 
   describe('generateDiscountCode', () => {
     it('should generate discount code successfully', async () => {
       const mockCode = 'DISCOUNT1234567890';
 
-      mockedAxios.create = vi.fn(() => ({
-        post: vi.fn().mockResolvedValue({
-          data: { success: true, code: mockCode },
-        }),
-      }));
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { success: true, code: mockCode },
+      });
 
-      const { adminApi: api } = await import('../api');
-      const code = await api.generateDiscountCode();
+      const { adminApi } = await import('../api');
+      const code = await adminApi.generateDiscountCode();
 
       expect(code).toBe(mockCode);
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/admin/generate-discount-code');
     });
   });
 
@@ -166,17 +189,16 @@ describe('Admin API', () => {
         totalOrders: 5,
       };
 
-      mockedAxios.create = vi.fn(() => ({
-        get: vi.fn().mockResolvedValue({
-          data: { success: true, data: mockStats },
-        }),
-      }));
+      mockAxiosInstance.get.mockResolvedValue({
+        data: { success: true, data: mockStats },
+      });
 
-      const { adminApi: api } = await import('../api');
-      const stats = await api.getStatistics();
+      const { adminApi } = await import('../api');
+      const stats = await adminApi.getStatistics();
 
       expect(stats.totalOrders).toBe(5);
       expect(stats.itemsPurchased).toBe(10);
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/admin/statistics');
     });
   });
 });
