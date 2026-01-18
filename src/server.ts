@@ -24,7 +24,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Root route
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({
     message: 'Ecommerce Store API',
     version: '1.0.0',
@@ -44,7 +44,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction): void => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });

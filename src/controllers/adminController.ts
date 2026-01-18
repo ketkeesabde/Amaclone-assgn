@@ -10,7 +10,7 @@ import * as store from '../data/store';
  * Generate discount code (only if nth order condition is satisfied)
  * POST /api/admin/generate-discount-code
  */
-export const generateDiscountCode = (req: Request, res: Response): void => {
+export const generateDiscountCode = (_req: Request, res: Response): void => {
   try {
     const code = store.generateDiscountCode();
     res.json({
@@ -29,7 +29,7 @@ export const generateDiscountCode = (req: Request, res: Response): void => {
  * Get statistics
  * GET /api/admin/statistics
  */
-export const getStatistics = (req: Request, res: Response): void => {
+export const getStatistics = (_req: Request, res: Response): void => {
   try {
     const stats = store.getStatistics();
     res.json({
